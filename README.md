@@ -147,12 +147,12 @@ The reasoning module and readiness mechanism are trained on 62k video-QA pairs
 (paper supplementary Table 11). None of these are redistributed here — download
 each from its original source:
 
-| Dataset | QA pairs | Source |
+| Dataset |  Source |
 | --- | --- | --- |
-| MSRVTT-QA | 10k | [xudejing/video-question-answering](https://github.com/xudejing/video-question-answering) |
-| MSVD-QA | 10k | [xudejing/video-question-answering](https://github.com/xudejing/video-question-answering) |
-| ActivityNet-QA | 32k | [MILVLG/activitynet-qa](https://github.com/MILVLG/activitynet-qa) |
-| MovieChat-1k | 10k | [Enxin/MovieChat-1K_train](https://huggingface.co/datasets/Enxin/MovieChat-1K_train) |
+| MSRVTT-QA | [xudejing/video-question-answering](https://github.com/xudejing/video-question-answering) |
+| MSVD-QA | [xudejing/video-question-answering](https://github.com/xudejing/video-question-answering) |
+| ActivityNet-QA | [MILVLG/activitynet-qa](https://github.com/MILVLG/activitynet-qa) |
+| MovieChat-1k | [Enxin/MovieChat-1K_train](https://huggingface.co/datasets/Enxin/MovieChat-1K_train) |
 
 Convert them into the unified annotation schema documented at the top of
 `lavis/datasets/datasets/streaming_qa_datasets.py` and concatenate into
