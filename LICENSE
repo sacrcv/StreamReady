@@ -1,0 +1,147 @@
+================================================================================
+StreamReady — License
+================================================================================
+
+Copyright (c) University of Central Florida.
+
+Except for the third-party components described in Part B below, this repository
+is licensed under the
+
+    Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International
+    (CC BY-NC-SA 4.0)
+
+Full license text: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+Summary:           https://creativecommons.org/licenses/by-nc-sa/4.0/
+
+(CC BY-NC-SA 4.0 Section 3(a)(1)(C) permits referring to the license by URI
+rather than reproducing its full text.)
+
+In short, you may share and adapt this material provided that you give
+appropriate credit, do not use it for commercial purposes, and distribute any
+derivative work under the same license. The license grants rights under
+copyright only; see Part C regarding patents.
+
+THE MATERIAL IS PROVIDED AS-IS AND WITHOUT WARRANTIES OF ANY KIND, AND THE
+LICENSOR WILL NOT BE LIABLE FOR ANY DAMAGES ARISING FROM ITS USE, TO THE
+FULLEST EXTENT PERMITTED BY LAW. See Section 5 of the full license text.
+
+--------------------------------------------------------------------------------
+PART A — SCOPE
+--------------------------------------------------------------------------------
+
+CC BY-NC-SA 4.0 applies to the original work in this repository, which is the
+StreamReady framework, the Answer Readiness Score, the ProReady-QA data pipeline
+and the surrounding training/evaluation scaffolding:
+
+    lavis/models/streamready/                 visual memory tree, query-aware
+                                              retrieval, contextual memory bank,
+                                              readiness mechanism
+    lavis/models/blip2_models/streamready.py  the StreamReady model
+    lavis/metrics/ars.py                      Answer Readiness Score
+    lavis/metrics/answer_matching.py          answer scoring
+    lavis/datasets/datasets/proready_qa_datasets.py
+    lavis/datasets/datasets/streaming_qa_datasets.py
+    lavis/datasets/datasets/frame_loading.py
+    lavis/datasets/builders/proready_qa_builder.py
+    lavis/datasets/builders/streaming_qa_builder.py
+    lavis/tasks/readiness_vqa.py
+    lavis/tasks/video_qa.py
+    lavis/configs/datasets/**  lavis/configs/models/streamready/**
+    lavis/projects/streamready/**
+    data/extract_frames.py
+    tools/**
+    run_scripts/**
+    train.py  evaluate.py  setup.py
+
+--------------------------------------------------------------------------------
+PART B — THIRD-PARTY COMPONENTS (NOT CC BY-NC-SA)
+--------------------------------------------------------------------------------
+
+This repository vendors Salesforce LAVIS (https://github.com/salesforce/LAVIS).
+Every file under lavis/ that is not listed in Part A above is derived from LAVIS
+and remains under the BSD 3-Clause License. Those files are NOT relicensed, and
+the NonCommercial and ShareAlike conditions above do NOT apply to them. You may
+continue to use them under BSD 3-Clause terms independently of this repository.
+This includes, among others:
+
+    lavis/common/**                           registry, config, distributed utils
+    lavis/processors/**                        image and video processors
+    lavis/runners/**                           training runners
+    lavis/tasks/base_task.py
+    lavis/models/base_model.py
+    lavis/models/blip2_models/blip2.py         BLIP-2 base (modified, see below)
+    lavis/models/blip2_models/Qformer.py       BLIP-2 Q-Former
+    lavis/models/blip2_models/modeling_llama.py
+    lavis/models/blip2_models/modeling_t5.py
+    lavis/models/eva_vit.py                    EVA-CLIP ViT-G/14
+    lavis/models/clip_vit.py
+    lavis/datasets/datasets/base_dataset.py
+    lavis/datasets/datasets/dataloader_utils.py
+    lavis/datasets/builders/base_dataset_builder.py
+    lavis/configs/default.yaml
+
+BSD 3-Clause License
+
+Copyright (c) 2023, salesforce.com, inc.
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+3. Neither the name of the copyright holder nor the names of its contributors
+   may be used to endorse or promote products derived from this software
+   without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+These files carry their original copyright headers. Modifications made to
+vendor them are limited to what the StreamReady code requires:
+lavis/models/blip2_models/blip2.py keeps the BLIP-2 Q-Former and frozen-ViT
+constructors and drops the model families StreamReady does not use, and the
+LAVIS model, dataset, task and builder registries were reduced to the entries
+this repository registers. LAVIS credits the EVA, BEiT, timm, DeiT and DINO
+codebases for eva_vit.py; see that file's header.
+
+--------------------------------------------------------------------------------
+PART C — PATENT NOTICE
+--------------------------------------------------------------------------------
+
+The technology implemented in this repository is the subject of a pending
+patent application owned by the University of Central Florida (UCF). The
+application is in process at the time of release, so no granted patent number
+is stated here.
+
+NO PATENT RIGHTS ARE GRANTED BY THIS LICENSE. CC BY-NC-SA 4.0 is a copyright
+license only; Section 2(b)(2) of that license states expressly that "Patent and
+trademark rights are not licensed under this Public License."
+
+The copyright permission granted above therefore does not authorize practicing
+the claimed inventions. Commercial use, and any use requiring patent rights,
+requires a separate license from UCF.
+
+    UCF Office of Technology Transfer
+    https://www.research.ucf.edu/tech-transfer/contact/
+
+Research and other non-commercial use of this code remains subject to the
+patent applicant's rights; consult UCF if you are unsure whether your intended
+use requires a patent license.
+
+Because the method is under the patent process, trained StreamReady checkpoints
+are not released. Everything required to train the model from the publicly
+available initialisations is provided in this repository.

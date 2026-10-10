@@ -1,0 +1,44 @@
+# Exact versions StreamReady was developed and run against.
+# Python 3.10.20, CUDA 11.8, 4-8x NVIDIA A100-40GB.
+#
+# Use this only if requirements.txt gives you trouble:
+#   pip install -r requirements-lock.txt
+#
+# torch/torchvision carry a +cu118 local version tag; install them from the
+# PyTorch index first if pip cannot resolve them:
+#   pip install torch==2.7.1 torchvision==0.22.1 --index-url https://download.pytorch.org/whl/cu118
+
+torch==2.7.1
+torchvision==0.22.1
+transformers==4.45.2
+peft==0.13.2
+timm==0.4.12
+sentencepiece==0.2.1
+accelerate==1.13.0
+
+omegaconf==2.3.0
+numpy==1.26.4
+pillow==12.2.0
+pandas==2.3.3
+pyyaml==6.0.3
+iopath==0.1.10
+tqdm==4.67.3
+requests==2.34.2
+
+decord==0.6.0
+opencv-python-headless==4.5.5.64
+scikit-image==0.25.2
+scipy==1.15.3
+matplotlib==3.10.9
+
+nltk==3.9.4
+spacy==3.8.14
+ftfy==6.3.1
+
+pycocoevalcap==1.2
+pycocotools==2.0.11
+
+fairscale==0.4.4
+webdataset==1.0.2
+python-magic==0.4.27
+einops==0.8.2

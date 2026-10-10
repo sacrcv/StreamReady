@@ -1,0 +1,64 @@
+# StreamReady runtime dependencies.
+#
+# Lower bounds are hard requirements; upper bounds mark versions known to
+# break. The exact versions this repo was developed and run against are
+# listed in requirements-lock.txt.
+
+# --- core ---
+torch>=2.0.0
+torchvision>=0.15.0
+# >=4.28 is required for the Llama implementation used by Vicuna (asserted at
+# import in lavis/models/blip2_models/blip2_vicuna_instruct.py). <4.46 because
+# newer releases change the BertSelfAttention internals that the memory-bank
+# subclass MBBertSelfAttention overrides.
+transformers>=4.28.0,<4.46
+# LoRA fine-tuning of the LLM (paper Sec. 4.2). Only imported when
+# model.use_lora is True.
+peft>=0.7.0
+# Pinned by upstream LAVIS: later versions change the ViT layer helpers that
+# lavis/models/eva_vit.py relies on.
+timm==0.4.12
+sentencepiece
+accelerate>=0.26.0
+
+# --- config / data plumbing ---
+omegaconf>=2.1.0
+# numpy 2.x is not yet compatible with the pinned opencv / timm combination.
+numpy>=1.22,<2.0
+pillow
+pandas
+pyyaml
+iopath
+tqdm
+requests
+
+# --- video / image ---
+decord            # on Apple Silicon install `eva-decord` instead
+opencv-python-headless==4.5.5.64
+scikit-image
+scipy
+matplotlib
+
+# --- text ---
+# POS tagging for the entity stream's noun extraction (paper Sec. 3.1.1).
+# Needs the `punkt`/`punkt_tab` and `averaged_perceptron_tagger` corpora,
+# which feature_modulator.py downloads on first use.
+nltk
+# Answer lemmatisation for QA exact-match scoring; needs en_core_web_sm:
+#   python -m spacy download en_core_web_sm
+spacy
+ftfy
+regex
+
+# --- metrics ---
+# CIDEr / BLEU / METEOR for the captioning benchmarks. pycocoevalcap needs a
+# JRE for the METEOR and SPICE jars.
+pycocoevalcap
+pycocotools
+
+# --- misc (pulled in by the vendored LAVIS library) ---
+fairscale==0.4.4
+webdataset
+python-magic
+einops>=0.4.1
+packaging
