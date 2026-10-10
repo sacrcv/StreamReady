@@ -1,0 +1,66 @@
+# ProReady-QA dataset defaults (StreamReady paper Sec. 4).
+#
+# 10 one-hour Ego4D videos and 22 half-hour MovieNet videos sourced from
+# VStream-QA, with ~5k proactive multi-turn QA pairs, each carrying an annotated
+# answer evidence window. Frames are sampled at 1 FPS (paper supplementary Sec. D).
+#
+# `storage` paths are relative to the data root, which is $STREAMREADY_DATA_ROOT
+# when set, otherwise <repo>/data (see lavis/configs/default.yaml).
+
+datasets:
+  proready_qa:
+    data_type: images  # pre-extracted JPEG frames, not decoded video
+
+    build_info:
+      annotations:
+        # ProReady-QA is an EVALUATION-ONLY benchmark: there is no train split.
+        # StreamReady is trained on the separate corpus of supplementary
+        # Table 11 (see `video_qa_train`) and evaluated here zero-shot.
+        #
+        # These are the two files exactly as the benchmark ships them, read in
+        # place -- no conversion step. The loader takes the released flat
+        # record list, groups turns by `dialogue_id`, and reads per-video frame
+        # counts from `frames_manifest.json` beside them.
+        test:
+          storage:
+            - proready_qa/proready_qa_ego4d.json
+            - proready_qa/proready_qa_movienet.json
+      images:
+        storage: proready_qa/frames
+
+    # Number of frames handed to the model per question. The streaming pass walks
+    # these in order, so this also sets how many readiness decisions are made.
+    num_frames: 100
+
+    # There is no `max_history_turns` knob. A dialogue is answered in one
+    # streaming pass and the contextual memory bank is filled from the model's
+    # own answer representations as it goes (paper Sec. 3.2), so there is nothing
+    # to replay and no bound to set. Its capacity is `context_capacity` on the
+    # model.
+
+    # True: the model may observe the whole stream and readiness decides when to
+    # answer. False truncates just past the evidence window, which leaks where the
+    # answer is and should only be used for debugging.
+    observe_full_video: True
+
+    # Paper Sec. 5: streaming models are run "with the prompt 'Answer whenever
+    # you are ready'". Appended after the prompt is assembled, so it survives
+    # both the multiple-choice and open-ended branches. Set to "" to drop it.
+    readiness_cue: "Answer whenever you are ready."
+
+    vis_processor:
+      train:
+        name: "blip2_video_train"
+        n_frms: 100
+        image_size: 224
+      eval:
+        name: "blip2_video_eval"
+        n_frms: 100
+        image_size: 224
+    text_processor:
+      train:
+        name: "blip_question"
+        prompt: ""
+      eval:
+        name: "blip_question"
+        prompt: ""

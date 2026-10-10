@@ -1,0 +1,112 @@
+# StreamReady on ProReady-QA (evaluation only).
+#
+# Paper: "StreamReady: Learning What to Answer and When in Long Streaming Videos",
+# CVPR 2026. Hyperparameters follow supplementary Sec. D unless noted.
+#
+# ProReady-QA has no train split -- it measures *when* a model answers, so it is
+# a held-out benchmark. Train with run_scripts/train.sh, then:
+#
+#   bash run_scripts/proready_qa/test.sh /path/to/checkpoint.pth
+
+model:
+  arch: streamready
+  model_type: qwen2_vl
+  load_pretrained: True
+  load_finetuned: False
+
+  # --- StreamReady: visual memory tree (paper Sec. 3.2) ---
+  frame_capacity: 24
+  num_centroids: 96
+  num_prototypes: 12
+  ema_decay: 0.985
+
+  # --- StreamReady: query-aware retrieval (paper Eqs. 4-5) ---
+  topk_prototypes: 8
+  topk_centroids: 24
+
+  # --- StreamReady: contextual memory (paper Sec. 3.2/3.3) ---
+  use_contextual_memory: True
+  context_topk: 4
+
+  # --- StreamReady: readiness mechanism (paper Sec. 3.4) ---
+  use_readiness: True
+  readiness_threshold: 0.35
+  lambda_reg: 0.1
+
+  num_frames: 100
+  # Activation checkpointing in the Q-Former branches. The streaming pass calls
+  # each branch once per timestep, so this is usually needed at num_frames=100.
+  gradient_checkpointing: True
+
+datasets:
+  proready_qa:
+    vis_processor:
+      train:
+        name: "blip2_video_train"
+        n_frms: 100
+        image_size: 224
+      eval:
+        name: "blip2_video_eval"
+        n_frms: 100
+        image_size: 224
+    text_processor:
+      train:
+        name: "blip_question"
+        prompt: ""
+      eval:
+        name: "blip_question"
+        prompt: ""
+    num_frames: 100
+
+run:
+  task: readiness_vqa
+
+  # Evaluation-only: these exist because the runner reads them, not because
+  # anything is optimised here.
+  lr_sched: "linear_warmup_cosine_lr"
+  init_lr: 2e-5
+  min_lr: 0
+  warmup_lr: 1e-8
+  warmup_steps: 0
+  weight_decay: 0.05
+  max_epoch: 1
+  beta2: 0.999
+
+  batch_size_train: 2
+  # One dialogue at a time: turn counts and ask times differ per dialogue, and
+  # each item is now a whole dialogue answered in a single streaming pass. That
+  # is far cheaper than it sounds -- the old per-turn items re-streamed the
+  # entire video once per question.
+  batch_size_eval: 1
+  accum_grad_iters: 1
+  num_workers: 4
+
+  # Generation / scoring
+  max_len: 30
+  min_len: 1
+  num_beams: 3
+  inference_method: "generate"
+  prompt: ""
+  # ARS penalty sharpness (paper Sec. 5): gamma_e = 6 suppresses speculation,
+  # gamma_l = 1 tolerates slight delay.
+  gamma_early: 6.0
+  gamma_late: 1.0
+
+  seed: 42
+  output_dir: "output/streamready_proready_qa"
+
+  amp: True
+  resume_ckpt_path: null
+
+  evaluate: True
+  train_splits: []
+  test_splits: ["test"]
+
+  device: "cuda"
+  world_size: 1
+  dist_url: "env://"
+  distributed: True
+
+  report_metric: True
+  prefix: "streamready_proready_qa"
+  suffix: ""

@@ -1,0 +1,120 @@
+# StreamReady training.
+#
+# Paper: "StreamReady: Learning What to Answer and When in Long Streaming Videos",
+# CVPR 2026. Hyperparameters follow supplementary Sec. D unless noted.
+#
+# Trains on the 62k video-QA corpus of supplementary Table 11, converted to the
+# unified annotation schema (see lavis/configs/datasets/video_qa_train). Both
+# ProReady-QA and OVO-Bench are held out and evaluated afterwards.
+#
+#   bash run_scripts/train.sh
+#
+# Paper Sec. 3.4 trains the two objectives separately. The default here is the
+# two-stage schedule:
+#   STAGE=reasoning bash run_scripts/train.sh   # cross-entropy on the answer
+#   STAGE=readiness bash run_scripts/train.sh   # Eqs. 7-8 contrastive timing
+# `STAGE=joint` runs both in one pass; L_rdy stays gradient-isolated either way.
+
+model:
+  arch: streamready
+  model_type: qwen2_vl
+  load_pretrained: True
+  load_finetuned: False
+
+  # --- StreamReady: visual memory tree (paper Sec. 3.2) ---
+  frame_capacity: 24
+  num_centroids: 96
+  num_prototypes: 12
+  ema_decay: 0.985
+
+  # --- StreamReady: query-aware retrieval (paper Eqs. 4-5) ---
+  topk_prototypes: 8
+  topk_centroids: 24
+
+  # --- StreamReady: contextual memory (paper Sec. 3.2/3.3) ---
+  # The Table 11 corpus is single-turn, so the bank is empty for every training
+  # step. ContextualMemoryBank.forward returns z_l untouched when the bank is
+  # empty, which means the cross-attention, its LayerNorms and the gate receive
+  # NO GRADIENT here and stay at their zero-init (identity) values -- while
+  # ProReady-QA evaluation does exercise them. Train on data with real dialogues
+  # if you need this path fitted. See the README note under "Multi-turn
+  # dialogues stream once".
+  use_contextual_memory: True
+  context_topk: 4
+
+  # --- StreamReady: readiness mechanism (paper Sec. 3.4) ---
+  use_readiness: True
+  readiness_threshold: 0.35
+  lambda_reg: 0.1
+  train_stage: "reasoning"
+
+  num_frames: 100
+  # Activation checkpointing in the Q-Former branches. The streaming pass calls
+  # each branch once per timestep, so this is usually needed at num_frames=100.
+  gradient_checkpointing: True
+
+datasets:
+  video_qa_train:
+    num_frames: 100
+    vis_processor:
+      train:
+        name: "blip2_video_train"
+        n_frms: 100
+        image_size: 224
+      eval:
+        name: "blip2_video_eval"
+        n_frms: 100
+        image_size: 224
+    text_processor:
+      train:
+        name: "blip_question"
+        prompt: ""
+      eval:
+        name: "blip_question"
+        prompt: ""
+
+run:
+  task: video_qa
+
+  # Paper supplementary Sec. D: 5 epochs, lr 2e-5, cosine annealing, AdamW (0.9, 0.999).
+  lr_sched: "linear_warmup_cosine_lr"
+  init_lr: 2e-5
+  min_lr: 0
+  warmup_lr: 1e-8
+  warmup_steps: 500
+  weight_decay: 0.05
+  max_epoch: 5
+  beta2: 0.999
+
+  batch_size_train: 2
+  batch_size_eval: 2
+  accum_grad_iters: 8
+  num_workers: 4
+
+  max_len: 30
+  min_len: 1
+  num_beams: 3
+  inference_method: "generate"
+  prompt: ""
+
+  seed: 42
+  output_dir: "output/streamready_train"
+
+  amp: True
+  resume_ckpt_path: null
+
+  evaluate: False
+  train_splits: ["train"]
+  # No held-in validation split: ProReady-QA and OVO-Bench are the evaluations,
+  # run separately so training never sees them.
+  valid_splits: []
+  test_splits: []
+
+  device: "cuda"
+  world_size: 1
+  dist_url: "env://"
+  distributed: True
+
+  report_metric: False
+  prefix: "streamready_train"
+  suffix: ""

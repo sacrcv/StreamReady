@@ -1,0 +1,47 @@
+# OVO-Bench: backward/real-time MCQ plus forward REC/SSR/CRR, each at its own ask time.
+#
+# Annotations are produced by:
+#   python tools/convert_benchmarks.py --benchmark ovo_bench \
+#       --raw <native annotation dir> --frames-root ovo_bench/frames \
+#       --output ovo_bench/annotation/ovo_bench_test.json
+# Frames by data/extract_frames.py at 1 FPS (paper supplementary Sec. D).
+#
+# Paths are relative to the data root ($STREAMREADY_DATA_ROOT, else <repo>/data).
+
+datasets:
+  ovo_bench:
+    data_type: images
+
+    build_info:
+      annotations:
+        test:
+          storage: ovo_bench/annotation/ovo_bench_test.json
+      images:
+        storage: ovo_bench/frames
+
+    num_frames: 100
+    # Ask time is authoritative: only frames up to it are observable.
+    truncate_at_question_time: True
+    observe_full_video: False
+
+    # Paper Sec. 5: streaming models are run "with the prompt 'Answer whenever
+    # you are ready'". Appended after the prompt is assembled, so it survives
+    # both the multiple-choice and open-ended branches. Set to "" to drop it.
+    readiness_cue: "Answer whenever you are ready."
+
+    vis_processor:
+      train:
+        name: "blip2_video_train"
+        n_frms: 100
+        image_size: 224
+      eval:
+        name: "blip2_video_eval"
+        n_frms: 100
+        image_size: 224
+    text_processor:
+      train:
+        name: "blip_question"
+        prompt: ""
+      eval:
+        name: "blip_question"
+        prompt: ""

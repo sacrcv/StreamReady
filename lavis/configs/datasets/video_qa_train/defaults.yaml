@@ -1,0 +1,51 @@
+# StreamReady training corpus (paper supplementary Table 11).
+#
+# 62k video-QA pairs: MSRVTT-QA 10k, MSVD-QA 10k, ActivityNet-QA 32k,
+# MovieChat-1k 10k. None of them are redistributed here -- download each from its
+# original source (see the README) and convert to the unified annotation schema
+# documented in lavis/datasets/datasets/streaming_qa_datasets.py. Concatenate
+# them into one file, or list several files under `storage`.
+#
+# These are plain video-QA pairs with no ask time, so nothing is truncated and
+# the model observes the whole clip; the readiness mechanism derives its own
+# pseudo evidence timestamps (paper Eqs. 7-8), which is why training needs no
+# timing labels.
+#
+# Paths are relative to the data root ($STREAMREADY_DATA_ROOT, else <repo>/data).
+
+datasets:
+  video_qa_train:
+    data_type: images
+
+    build_info:
+      annotations:
+        train:
+          storage: video_qa_train/annotation/train.json
+      images:
+        storage: video_qa_train/frames
+
+    num_frames: 100
+    # No ask time in the training corpus.
+    truncate_at_question_time: False
+    observe_full_video: True
+    # No readiness cue here. Sec. 5 specifies it for streaming *evaluation*;
+    # these are plain video-QA pairs with no ask time, and training the model to
+    # expect the phrase would couple it to the eval prompt.
+    readiness_cue: ""
+
+    vis_processor:
+      train:
+        name: "blip2_video_train"
+        n_frms: 100
+        image_size: 224
+      eval:
+        name: "blip2_video_eval"
+        n_frms: 100
+        image_size: 224
+    text_processor:
+      train:
+        name: "blip_question"
+        prompt: ""
+      eval:
+        name: "blip_question"
+        prompt: ""

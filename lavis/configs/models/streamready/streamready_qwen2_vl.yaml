@@ -1,0 +1,121 @@
+# StreamReady model defaults.
+#
+# Paper: "StreamReady: Learning What to Answer and When in Long Streaming Videos",
+# CVPR 2026.
+#
+# These are the model-level defaults; project configs under
+# lavis/projects/streamready/ override what they need. Values are annotated with
+# the paper section they come from.
+#
+# Resolution order (lowest to highest priority):
+#   1. this file
+#   2. lavis/configs/datasets/<dataset>/defaults.yaml
+#   3. lavis/projects/streamready/<experiment>.yaml   (--cfg-path)
+#   4. --options key value  on the CLI
+model:
+  arch: streamready
+  model_type: qwen2_vl
+
+  # ---- frozen backbone (paper Sec. 5) ----
+  # One Qwen2-VL checkpoint supplies both halves: its vision tower encodes
+  # frames, and its decoder generates the answer. Using the matched pair is the
+  # point -- the decoder was trained against that tower's visual features.
+  # Point this at a local directory or a hub id.
+  backbone_model: "llm/Qwen2-VL-7B-Instruct"
+  backbone_precision: "fp16"
+  # sdpa needs no flash-attn install. Use "flash_attention_2" if you have it.
+  attn_implementation: "sdpa"
+  image_size: 224
+  # Table 8 of the paper shows the framework is robust across 7B-scale MLLM
+  # backbones, so Qwen2.5-VL-7B-Instruct also works here.
+
+  # ---- dual-branch Q-Former (paper Sec. 3.3) ----
+  # Both branches are initialised from the same pretrained BLIP-2 / InstructBLIP
+  # checkpoint, then trained independently. `pretrained` below supplies those
+  # weights; the loader clones the single Qformer tower into both branches.
+  num_query_token: 32
+  qformer_text_input: True
+  # Qwen2-VL emits 3584-wide tokens; BLIP-2 pretrained the Q-Former's
+  # cross-attention at 1408 (EVA-CLIP ViT-G). A trainable projection onto 1408
+  # keeps those pretrained keys and values, which is what "initialise the
+  # dual-branch Q-Former from BLIP-2 weights" requires. Set to null to let the
+  # Q-Former cross-attend at 3584 instead and give up that initialisation.
+  qformer_encoder_width: 1408
+  load_pretrained: True
+  pretrained: "https://storage.googleapis.com/sfr-vision-language-research/LAVIS/models/InstructBLIP/instruct_blip_vicuna7b_trimmed.pth"
+
+  # ---- visual memory tree (paper Sec. 3.2, capacities from supplementary Fig. 7) ----
+  # "a configuration of 24 frames, 96 centroids, and 12 prototypes achieves strong
+  # accuracy and stable ARS"
+  frame_capacity: 24      # |M_V1|, FIFO buffer of raw frames
+  num_centroids: 96       # J,     centroid set M_V2
+  num_prototypes: 12      # U,     prototype set M_V3
+  ema_decay: 0.985        # alpha in Eqs. 1-2 (supplementary Sec. D)
+  # Token width of one centroid/prototype slot. Not specified by the paper; 1 keeps
+  # the retrieved budget small, which is the regime the paper's latency analysis
+  # describes. See lavis/models/streamready/visual_memory.py for the reasoning.
+  slot_tokens: 1
+
+  # ---- query-aware retrieval (paper Eqs. 4-5, supplementary Fig. 8) ----
+  # "the best results occur at the balanced setting of 8 prototypes and 24 centroids"
+  topk_prototypes: 8      # K in Eq. 4
+  topk_centroids: 24      # m in Eq. 5
+
+  # ---- short -> long branch fusion (paper Eq. 6) ----
+  # Eq. 6 reads z_l = Q_l(Concat[...], z_s): the short-term output is a *second
+  # argument* to the long branch, not extra tokens in its input. Following HierarQ,
+  # it is injected inside every cross-attending block of the long Q-Former through
+  # an extra attention + gate pair, zero-initialised so training starts from the
+  # plain BLIP-2 behaviour.
+  #   per_layer         - every cross-attending long block attends over the final z_s
+  #   per_layer_matched - block at depth d attends over the short branch's depth-d output
+  #   post              - single fusion pass after the long Q-Former (ablation only)
+  long_term_fusion_mode: "per_layer"
+  fusion_num_heads: null  # null -> same head count as the Q-Former
+
+  # ---- contextual memory bank (paper Sec. 3.2/3.3) ----
+  # Relevance gating is load bearing: the paper's ablation shows attending over all
+  # prior turns without filtering costs 4-5% accuracy on StreamingBench.
+  use_contextual_memory: True
+  context_capacity: 32
+  context_topk: 4
+  context_sim_floor: 0.2
+
+  # ---- readiness mechanism (paper Sec. 3.4) ----
+  use_readiness: True
+  readiness_threshold: 0.35   # LLM trigger threshold (paper Sec. 5)
+  readiness_hidden: null      # null -> same width as the Q-Former hidden size
+  lambda_reg: 0.1             # temporal coherence weight in Eq. 8
+  readiness_loss_weight: 1.0
+  # Readiness and reasoning are trained separately: reasoning by cross-entropy
+  # on the answer, readiness by the Eq. 7-8 contrastive loss over pseudo
+  # evidence timestamps. L_rdy updates only the <RDY> token and the readiness
+  # head.
+  #   reasoning - cross-entropy only; readiness head and <RDY> frozen
+  #   readiness - contrastive loss only; whole reasoning pathway frozen, and
+  #               the decoder forward is skipped since nothing needs it
+  #   joint     - both in one pass; L_rdy is still gradient-isolated to the
+  #               readiness parameters, at the cost of one extra backward
+  #               traversal of the long branch
+  train_stage: "joint"
+
+  # ---- misc ----
+  num_frames: 100
+  max_txt_len: 128
+  max_output_txt_len: 256
+  prompt: ""
+preprocess:
+  vis_processor:
+    train:
+      name: "blip2_video_train"
+      image_size: 224
+      n_frms: 100
+    eval:
+      name: "blip2_video_eval"
+      image_size: 224
+      n_frms: 100
+  text_processor:
+    train:
+      name: "blip_question"
+    eval:
+      name: "blip_question"

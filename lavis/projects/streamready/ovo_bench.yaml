@@ -1,0 +1,74 @@
+# StreamReady on ovo_bench.
+# OVO-Bench: backward/real-time MCQ plus forward REC/SSR/CRR, each at its own ask time.
+#
+# Evaluate: bash run_scripts/benchmarks/eval.sh /path/to/checkpoint.pth
+
+model:
+  arch: streamready
+  model_type: qwen2_vl
+  load_pretrained: True
+  load_finetuned: False
+
+  frame_capacity: 24
+  num_centroids: 96
+  num_prototypes: 12
+  ema_decay: 0.985
+  topk_prototypes: 8
+  topk_centroids: 24
+  readiness_threshold: 0.35
+
+  num_frames: 100
+  gradient_checkpointing: True
+
+datasets:
+  ovo_bench:
+    num_frames: 100
+    vis_processor:
+      eval:
+        name: "blip2_video_eval"
+        n_frms: 100
+        image_size: 224
+    text_processor:
+      eval:
+        name: "blip_question"
+        prompt: ""
+
+run:
+  task: video_qa
+
+  # Evaluation-only defaults; these benchmarks are test splits.
+  lr_sched: "linear_warmup_cosine_lr"
+  init_lr: 2e-5
+  min_lr: 0
+  warmup_lr: 1e-8
+  warmup_steps: 0
+  weight_decay: 0.05
+  max_epoch: 1
+  batch_size_train: 2
+  batch_size_eval: 2
+  accum_grad_iters: 1
+  num_workers: 4
+
+  # Multiple choice needs only a letter.
+  max_len: 16
+  min_len: 1
+  num_beams: 1
+  inference_method: "generate"
+  prompt: ""
+
+  seed: 42
+  output_dir: "output/streamready_ovo_bench"
+  amp: True
+  resume_ckpt_path: null
+
+  evaluate: True
+  train_splits: []
+  test_splits: ["test"]
+
+  device: "cuda"
+  world_size: 1
+  dist_url: "env://"
+  distributed: True
+  report_metric: True
+  prefix: "streamready_ovo_bench"
+  suffix: ""
