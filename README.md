@@ -148,7 +148,7 @@ The reasoning module and readiness mechanism are trained on 62k video-QA pairs
 each from its original source:
 
 | Dataset |  Source |
-| --- | --- | --- |
+| --- | --- |
 | MSRVTT-QA | [xudejing/video-question-answering](https://github.com/xudejing/video-question-answering) |
 | MSVD-QA | [xudejing/video-question-answering](https://github.com/xudejing/video-question-answering) |
 | ActivityNet-QA | [MILVLG/activitynet-qa](https://github.com/MILVLG/activitynet-qa) |
